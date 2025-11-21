@@ -5,8 +5,6 @@ It supports a wide variety of file types including documents, archives, executab
 
 This tool is designed for convenience, automation, and efficiency when downloading files from directory listings commonly found on servers, mirrors, and open file repositories.
 
----
-
 ## ✨ Features
 
 * ✔ **Automatic link extraction** from `/index` pages
@@ -15,8 +13,6 @@ This tool is designed for convenience, automation, and efficiency when downloadi
 * ✔ **Proxy detection** (uses system `$http_proxy`)
 * ✔ **Auto-generated download directory** if none is specified
 * ✔ **Clean built-in help menu**
-
----
 
 ## 📥 Supported File Types
 
@@ -44,7 +40,6 @@ This tool is designed for convenience, automation, and efficiency when downloadi
 
 `jpg, png, webp, bmp, svg`
 
----
 
 ## 🚀 Usage
 
@@ -68,8 +63,6 @@ Example:
 ./indexof_downloader.sh "https://example.com/files/" my_downloads
 ```
 
----
-
 ## 🆘 Help Menu
 
 Show help automatically when no arguments are provided:
@@ -77,8 +70,6 @@ Show help automatically when no arguments are provided:
 ```bash
 ./indexof_downloader.sh
 ```
-
----
 
 ## 🧱 Script Workflow
 
@@ -89,16 +80,12 @@ Show help automatically when no arguments are provided:
 5. Logs failures to `logs/`
 6. Displays progress + final status
 
----
-
 ## 📦 Requirements
 
 * Bash (v4 or higher recommended)
 * curl
 * wget
 * grep with extended regex support
-
----
 
 ## ⚠️ Disclaimer
 
