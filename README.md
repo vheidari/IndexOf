@@ -1,4 +1,4 @@
-# 📘 **IndexOf Downloader** - Overview
+# 🤖 **IndexOf Downloader** - Overview
 
 **IndexOf Downloader** is a Bash utility that scans a public `/index`-style directory webpage, extracts direct download links, and downloads all available files automatically.
 It supports a wide variety of file types including documents, archives, executables, media files, and disk images.
