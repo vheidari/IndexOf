@@ -125,7 +125,7 @@ if [[ -s "${TARGET}.txt" ]]; then
 
     echo ""
     echo "------------------------------------------------------------"
-    echo "${GREEN} ✔ All downloads completed successfully.${RESET}"
+    echo -e "${GREEN} ✔ All downloads completed successfully.${RESET}"
     echo "------------------------------------------------------------"
 
 else
