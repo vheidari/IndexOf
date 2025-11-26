@@ -22,7 +22,7 @@
 # ========================================================================
 
 # ------------------------
-# Define Colors
+# Console Colors
 # ------------------------
 GREEN="\e[32m"
 RED="\e[31m"
@@ -61,6 +61,143 @@ Description:
 EOF
 }
 
+# ------------------------
+# UI Helpers
+# ------------------------
+print_line() {
+    empty=$1 
+    if [[ $empty == "empty" ]]; then
+        echo ""
+    else 
+        echo "---------------------------------------------------------------------------"
+    fi
+}
+
+
+console_log() {
+    local message="$1"
+    local type="$2"
+
+    case "$type" in
+        error)      echo -e "❌ ${RED}${message}${RESET}";;
+        warning)    echo -e "⚠️  ${YELLOW}${message}${RESET}";;
+        success)    echo -e "🟢 ${GREEN}${message}${RESET}";;
+        primary)    echo -e "💡 ${CYAN}${message}${RESET}";;
+
+        # short versions (no emoji)
+        s_error)    echo -e "${RED}${message}${RESET}";;
+        s_warning)  echo -e "${YELLOW}${message}${RESET}";;
+        s_success)  echo -e "${GREEN}${message}${RESET}";;
+        s_primary)  echo -e "${CYAN}${message}${RESET}";;
+
+        *)          echo "$message";;
+    esac
+}
+
+
+# ------------------------
+# Parse wget exit status
+# ------------------------
+wget_exit_status() {
+    case "$1" in
+        1) echo "wget: Generic error code.";;
+        2) echo "wget: Command-line usage error.";;
+        3) echo "wget: File read/write error.";;
+        4) echo "wget: Network failure.";;
+        5) echo "wget: SSL verification failure.";;
+        6) echo "wget: Authentication failure.";;
+        7) echo "wget: Protocol error.";;
+        8) echo "wget: Server returned an error response.";;
+        *) echo "wget: Successfully downloaded file.";;
+    esac
+}
+
+
+# ------------------------
+# Download task
+# ------------------------
+download_files() {
+
+    local target="$1"
+    local file_list="${target}.txt"
+
+    if [[ -s "$file_list" ]]; then
+
+        print_line
+        console_log "🔥 IndexOf Downloader — Download Session" s_success
+        print_line
+        console_log "📄 Extracted file list : ${file_list}" s_primary
+        console_log "📂 Download directory  : ${target}" s_primary
+        print_line "empty"
+        console_log "🚀 Starting download..." s_success
+        print_line
+
+        mkdir -p "$target"
+
+        # Counters
+        local index=0
+        local success_count=0
+        local fail_count=0
+
+        while IFS= read -r url; do
+            wget -c --tries=5 --retry-connrefused --timeout=10 "$url" -P "$target"
+            status=$?
+
+            if (( status != 0 )); then
+                echo "$url" >> "${FAIL}.txt"
+
+                console_log "Failed to download link #$index. Saved to ${FAIL}.txt" error
+                console_log "$(wget_exit_status "$status")" warning
+
+                ((fail_count++))
+            else
+                ((success_count++))
+            fi
+
+            ((index++))
+
+        done < "$file_list"
+
+        print_line
+        console_log "🎯 Total links processed     : $index" s_success
+        console_log "🌟 Successful downloads      : $success_count" s_success
+        console_log "💔 Failed downloads          : $fail_count" s_error
+        print_line
+        console_log "📂 Files saved in directory : $target" s_primary
+        print_line
+
+    else
+        print_line
+        console_log "No downloadable links were found." error
+        console_log "Please check the URL: $URL" warning
+        console_log "If the URL is correct, review your proxy settings. Some proxies can block downloads." warning
+        print_line
+    fi
+
+
+}
+
+# ------------------------
+# Extract File Links
+# ------------------------
+extract_links() {
+    local url="$1"
+    local target="$2"
+    local file_list="${target}.txt"
+
+    local proxy=""
+    [[ -n "$http_proxy" ]] && proxy="--proxy $http_proxy"
+
+    console_log "[+] Extracting file links from: $url" s_success
+    console_log "[+] Saving output to: $file_list" s_success
+
+    curl -s $proxy "$url" \
+        | grep -Eoi 'href="[^"]+\.(pdf|epub|djvu|docx?|txt|rtf|odt|odp|ods|ppt|pptx|xls|xlsx|csv|md|asm|s|c|h|c(pp|c)|h(pp|h)|gz|rar|zip|7z|z|bz2|xz|lzh|tar|zipx|7a|vhd|vmdk|jar|apk|ios|img|deb|rpm|whl|ps1|vb|bat|mp4|flv|mov|wmv|avi|mkv|m4a|mp3|jpg|png|webp|bmp|svg)"' \
+        | sed -E 's/^href="//; s/"$//' \
+        | sed "s|^|$url|" \
+        > "$file_list"
+}
+
 
 # -----------------------------------
 # Show help if no arguments were given
@@ -75,62 +212,12 @@ fi
 # Argument Parsing
 # ------------------------
 URL="$1"
-TARGET="$2"
-
-# Detect system proxy settings and configure wget/curl to use them if found
-USEPROXY=""
-if [[ -n "$http_proxy" ]]; then
-    USEPROXY="--proxy $http_proxy"
-fi
-
-# If no target directory was provided, generate one with a random suffix
-if [[ -z "$TARGET" ]]; then
-    TARGET="Download_$(( RANDOM % 10000 ))"
-fi
+TARGET="${2:-Download_$(( RANDOM % 10000 ))}"
+FAIL="Failed_$TARGET"
 
 
 # ------------------------
-# Extract File Links
-# ------------------------
-echo -e "${GREEN}[+] Extracting file links from: $URL ${RESET}"
-echo -e "${GREEN}[+] Output file list will be: ${TARGET}.txt ${RESET}"
-
-curl -s $USEPROXY $URL \
-    | grep -Eoi 'href="[^"]+\.(pdf|epub|djvu|docx?|txt|rtf|odt|odp|ods|ppt|pptx|xls|xlsx|csv|md|asm|s|c|h|c(pp|c)|h(pp|h)|gz|rar|zip|7z|z|bz2|xz|lzh|tar|zipx|7a|vhd|vmdk|jar|apk|ios|img|deb|rpm|whl|ps1|vb|bat|mp4|flv|mov|wmv|avi|mkv|m4a|mp3|jpg|png|webp|bmp|svg)"' \
-    | sed -E 's/^href="//; s/"$//' \
-    | sed "s|^|$URL|" \
-    > "${TARGET}.txt"
-
-
-# ------------------------
-# Download Section
-# ------------------------
-if [[ -s "${TARGET}.txt" ]]; then
-
-    echo "------------------------------------------------------------"
-    echo -e "${GREEN}  IndexOf Downloader — Download Session ${RESET}"
-    echo "------------------------------------------------------------"
-    echo -e "${CYAN}✔ File list generated : ${TARGET}.txt ${RESET}"
-    echo -e "${CYAN}✔ Download directory  : ${TARGET} ${RESET}"
-    echo ""
-    echo -e "${GREEN}Starting download... ${RESET}"
-    echo "------------------------------------------------------------"
-
-    mkdir -p "$TARGET"
-
-    # Download each file with retry logic enabled
-    while IFS= read -r item; do
-        wget -c --tries=5 --retry-connrefused --timeout=10 "$item" -P "$TARGET"
-    done < "${TARGET}.txt"
-
-    echo ""
-    echo "------------------------------------------------------------"
-    echo -e "${GREEN} ✔ All downloads completed successfully.${RESET}"
-    echo "------------------------------------------------------------"
-
-else
-    echo -e "${RED}✖ No downloadable file links were found at: ${URL} ${RESET}"
-    echo -e "${YELLOW}Note: Please verify that the provided URL is correct and accessible.${RESET}"
-    echo -e "${YELLOW}Note: If you’re sure the target URL: ${URL} is correct, you should check your proxy settings. Sometimes, some proxies like Lantern block certain URLs.${RESET}"
-fi
-
+# Main Script Execution
+# --------------------------
+exteract_links $URL $TARGET
+download_files "${TARGET}"
