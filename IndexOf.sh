@@ -164,7 +164,7 @@ download_files() {
         console_log "💔 Failed downloads          : $fail_count" s_error
         print_line
         console_log "📂 Files saved in directory : $target" s_primary
-        print_line
+        print_line        
 
     else
         print_line
@@ -219,5 +219,5 @@ FAIL="Failed_$TARGET"
 # ------------------------
 # Main Script Execution
 # --------------------------
-exteract_links $URL $TARGET
+extract_links $URL $TARGET
 download_files "${TARGET}"
