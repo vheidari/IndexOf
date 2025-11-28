@@ -66,7 +66,7 @@ EOF
 # ------------------------
 print_line() {
     empty=$1 
-    if [[ $empty == "empty" ]]; then
+    if [[ $empty == "" ]]; then
         echo ""
     else 
         echo "---------------------------------------------------------------------------"
@@ -90,7 +90,7 @@ console_log() {
         s_success)  echo -e "${GREEN}${message}${RESET}";;
         s_primary)  echo -e "${CYAN}${message}${RESET}";;
 
-        *)          echo "$message";;
+        *)          echo -e "$message";;
     esac
 }
 
@@ -116,10 +116,30 @@ wget_exit_status() {
 # ------------------------
 # Download task
 # ------------------------
-download_files() {
 
-    local target="$1"
+# Track download_files call depth
+TRACK_DOWNLOAD_FILES_DEPTH=0
+
+download_files() {
+    
+    local arg_one="$1"
+
+    # Default Download
+    local target="$arg_one"
     local file_list="${target}.txt"
+    local failed="Failed_$target"
+    local failed_list="${failed}.txt"
+
+    # Pars input 
+    if [[ $arg_one == --download_failed=* ]]; then
+        # get target name and remove --download_failed= part then update all local variables
+        target=${arg_one#"--download_failed="}
+        failed="Failed_$target"
+        failed_list="${failed}.txt"
+        file_list="$failed_list"
+    fi
+
+
 
     if [[ -s "$file_list" ]]; then
 
@@ -128,7 +148,7 @@ download_files() {
         print_line
         console_log "📄 Extracted file list : ${file_list}" s_primary
         console_log "📂 Download directory  : ${target}" s_primary
-        print_line "empty"
+        print_line ""
         console_log "🚀 Starting download..." s_success
         print_line
 
@@ -144,9 +164,9 @@ download_files() {
             status=$?
 
             if (( status != 0 )); then
-                echo "$url" >> "${FAIL}.txt"
+                echo "$url" >> "$failed_list"
 
-                console_log "Failed to download link #$index. Saved to ${FAIL}.txt" error
+                console_log "Failed to download link #$index. Saved to $failed_list" error
                 console_log "$(wget_exit_status "$status")" warning
 
                 ((fail_count++))
@@ -165,6 +185,30 @@ download_files() {
         print_line
         console_log "📂 Files saved in directory : $target" s_primary
         print_line        
+
+        
+        # Increase download_files call recursivly
+        ((TRACK_DOWNLOAD_FILES_DEPTH++))
+        
+        # If calling download_files more then 1 exit 
+        if ((TRACK_DOWNLOAD_FILES_DEPTH > 1)); then
+            console_log "Download attempt failed, preventing recursive retry loop." error
+            console_log "Aborting to prevent an infinite retry process. Please try downloading the file manually using the following command: ./IndexOf --download_failed=$failed_list"
+            exit 2
+        fi
+
+        # Handle Failed Download 
+        if (( fail_count > 0 )); then 
+            console_log "Unfortunately You have $fail_count Failed downloads. \n Would you like to retry downloading the failed files? [y/n]" error
+            read -r user_input
+            if [[ "$user_input" == "y" ]]; then
+                # Download Failed files
+                download_files "--download_failed=$target"
+            else
+                exit 1
+            fi
+        fi
+
 
     else
         print_line
@@ -204,7 +248,7 @@ extract_links() {
 # -----------------------------------
 if [[ -z "$1" ]]; then
     show_help
-    exit 1
+    exit 0
 fi
 
 
@@ -219,5 +263,5 @@ FAIL="Failed_$TARGET"
 # ------------------------
 # Main Script Execution
 # --------------------------
-extract_links $URL $TARGET
+extract_links "$URL" "$TARGET"
 download_files "${TARGET}"
