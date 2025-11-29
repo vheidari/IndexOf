@@ -236,7 +236,7 @@ extract_links() {
     console_log "[+] Saving output to: $file_list" s_success
 
     curl -s $proxy "$url" \
-        | grep -Eoi 'href="[^"]+\.(pdf|epub|djvu|docx?|txt|rtf|odt|odp|ods|ppt|pptx|xls|xlsx|csv|md|asm|s|c|h|c(pp|c)|h(pp|h)|gz|rar|zip|7z|z|bz2|xz|lzh|tar|zipx|7a|vhd|vmdk|jar|apk|ios|img|deb|rpm|whl|ps1|vb|bat|mp4|flv|mov|wmv|avi|mkv|m4a|mp3|jpg|png|webp|bmp|svg)"' \
+        | grep -Eoi 'href="[^"]+\.(pdf|epub|djvu|docx?|txt|srt|rtf|odt|odp|ods|ppt|pptx|xls|xlsx|csv|md|asm|s|c|h|c(pp|c)|h(pp|h)|gz|rar|zip|7z|z|bz2|xz|lzh|tar|zipx|7a|vhd|vmdk|jar|apk|ios|img|deb|rpm|whl|ps1|vb|bat|mp4|flv|mov|wmv|avi|mkv|m4a|mp3|jpg|png|webp|bmp|svg)"' \
         | sed -E 's/^href="//; s/"$//' \
         | sed "s|^|$url|" \
         > "$file_list"
