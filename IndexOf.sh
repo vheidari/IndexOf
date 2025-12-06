@@ -10,7 +10,7 @@
 #    them using wget.
 #
 #    Supported file extensions include:
-#    Documents: pdf, epub, djvu, doc, docx, txt, rtf, odt, odp, ods,
+#    Documents: pdf, epub, djvu, doc, docx, txt, srt, rtf, odt, odp, ods,
 #               ppt, pptx, xls, xlsx, csv, md
 #    Source/Code: asm, s, c, h, cpp, cc, hh, hpp, ps1, vb, bat, whl
 #    Archives: gz, rar, zip, 7z, z, bz2, xz, lzh, tar, zipx, 7a
@@ -192,8 +192,11 @@ download_files() {
         
         # If calling download_files more then 1 exit 
         if ((TRACK_DOWNLOAD_FILES_DEPTH > 1)); then
-            console_log "Download attempt failed, preventing recursive retry loop." error
-            console_log "Aborting to prevent an infinite retry process. Please try downloading the file manually using the following command: ./IndexOf --download_failed=$failed_list"
+            # Just show messages when fail_count > 0 
+            if (( fail_count > 0 )); then
+                console_log "Download attempt failed, preventing recursive retry loop." error
+            fi
+                console_log "Aborting to prevent an infinite retry process. Please try downloading the file manually using the following command: ./IndexOf --download_failed=$failed_list"
             exit 2
         fi
 
